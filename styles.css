@@ -268,12 +268,17 @@ img {
 
 .hero-control,
 .product-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   color: #6c390f;
   background: linear-gradient(135deg, #fff6da, #f2b345);
   box-shadow: 0 12px 24px rgba(119, 69, 15, .18);
   cursor: pointer;
+  line-height: 1;
   transition: transform .2s ease, filter .2s ease;
 }
 
@@ -284,6 +289,7 @@ img {
   width: 48px;
   height: 48px;
   font-size: 34px;
+  transform: translateY(-50%);
 }
 
 .hero-control.prev { left: clamp(14px, 2vw, 32px); }
@@ -291,8 +297,15 @@ img {
 
 .hero-control:hover,
 .product-controls button:hover {
-  transform: translateY(-2px) scale(1.03);
   filter: saturate(1.08);
+}
+
+.hero-control:hover {
+  transform: translateY(-50%) scale(1.03);
+}
+
+.product-controls button:hover {
+  transform: translateY(-2px) scale(1.03);
 }
 
 .hero-dots {
@@ -687,6 +700,7 @@ img {
     box-shadow: var(--shadow);
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transform: translateY(-10px);
     transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
   }
@@ -694,6 +708,7 @@ img {
   .main-nav.is-open {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
     transform: translateY(0);
   }
 
@@ -734,8 +749,8 @@ img {
   }
 
   .hero-control {
-    top: auto;
-    bottom: 82px;
+    top: 50%;
+    bottom: auto;
     width: 40px;
     height: 40px;
     font-size: 28px;
