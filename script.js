@@ -70,6 +70,59 @@ function setHiddenInteractiveState(element, isHidden) {
   });
 }
 
+function createSwipeNavigation(element, { onPrevious, onNext, onStart, onEnd }) {
+  let startX = 0;
+  let startY = 0;
+  let isTracking = false;
+  let isHorizontal = false;
+
+  element.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1) return;
+    startX = event.touches[0].clientX;
+    startY = event.touches[0].clientY;
+    isTracking = true;
+    isHorizontal = false;
+    if (onStart) onStart();
+  }, { passive: true });
+
+  element.addEventListener("touchmove", (event) => {
+    if (!isTracking || event.touches.length !== 1) return;
+    const deltaX = event.touches[0].clientX - startX;
+    const deltaY = event.touches[0].clientY - startY;
+
+    if (!isHorizontal && Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
+      isHorizontal = true;
+    }
+
+    if (isHorizontal) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  element.addEventListener("touchend", (event) => {
+    if (!isTracking) return;
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    const isSwipe = Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25;
+
+    if (isSwipe) {
+      if (deltaX > 0) onPrevious();
+      else onNext();
+    }
+
+    isTracking = false;
+    isHorizontal = false;
+    if (onEnd) onEnd();
+  }, { passive: true });
+
+  element.addEventListener("touchcancel", () => {
+    isTracking = false;
+    isHorizontal = false;
+    if (onEnd) onEnd();
+  }, { passive: true });
+}
+
 function createHeroCarousel(root) {
   const slides = Array.from(root.querySelectorAll(".hero-slide"));
   const prev = root.querySelector("[data-hero-prev]");
@@ -111,6 +164,12 @@ function createHeroCarousel(root) {
 
   prev.addEventListener("click", () => show(index - 1));
   next.addEventListener("click", () => show(index + 1));
+  createSwipeNavigation(root, {
+    onPrevious: () => show(index - 1),
+    onNext: () => show(index + 1),
+    onStart: stop,
+    onEnd: start,
+  });
   root.addEventListener("mouseenter", stop);
   root.addEventListener("mouseleave", start);
   root.addEventListener("focusin", stop);
@@ -118,6 +177,61 @@ function createHeroCarousel(root) {
   onMotionPreferenceChange(start);
   show(0);
   start();
+}
+
+function createProductViewer() {
+  const viewer = document.createElement("div");
+  viewer.className = "image-viewer";
+  viewer.setAttribute("role", "dialog");
+  viewer.setAttribute("aria-modal", "true");
+  viewer.setAttribute("aria-label", "产品图片预览");
+  viewer.innerHTML = `
+    <button class="image-viewer-close" type="button" aria-label="关闭预览">&times;</button>
+    <img class="image-viewer-image" alt="" />
+    <p class="image-viewer-caption"></p>
+  `;
+  document.body.appendChild(viewer);
+
+  const close = viewer.querySelector(".image-viewer-close");
+  const image = viewer.querySelector(".image-viewer-image");
+  const caption = viewer.querySelector(".image-viewer-caption");
+
+  function open(source) {
+    image.src = source.currentSrc || source.src;
+    image.alt = source.alt || "产品图片";
+    caption.textContent = source.alt || "";
+    viewer.classList.add("is-open");
+    document.body.classList.add("viewer-open");
+    close.focus();
+  }
+
+  function hide() {
+    viewer.classList.remove("is-open");
+    document.body.classList.remove("viewer-open");
+    image.removeAttribute("src");
+  }
+
+  document.addEventListener("click", (event) => {
+    const imageTarget = event.target.closest(".product-card img");
+    if (!imageTarget) return;
+    open(imageTarget);
+  });
+  document.addEventListener("keydown", (event) => {
+    const card = event.target.closest(".product-card");
+    if (!card || (event.key !== "Enter" && event.key !== " ")) return;
+    const imageTarget = card.querySelector("img");
+    if (!imageTarget) return;
+    event.preventDefault();
+    open(imageTarget);
+  });
+
+  close.addEventListener("click", hide);
+  viewer.addEventListener("click", (event) => {
+    if (event.target === viewer) hide();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && viewer.classList.contains("is-open")) hide();
+  });
 }
 
 function createProductCarousel(root) {
@@ -136,6 +250,12 @@ function createProductCarousel(root) {
     return window.matchMedia("(max-width: 780px)").matches ? 2 : 4;
   }
 
+  originalCards.forEach((card) => {
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `${card.querySelector("img")?.alt || "产品图片"}，点击查看大图`);
+  });
+
   function setPosition(withTransition = true) {
     const count = visibleCount();
     const first = cards[0];
@@ -144,7 +264,10 @@ function createProductCarousel(root) {
     track.classList.toggle("no-transition", !withTransition);
     track.style.transform = `translateX(${-index * itemWidth}px)`;
     cards.forEach((card, i) => {
-      card.classList.toggle("is-visible", i >= index && i < index + count);
+      const isVisible = i >= index && i < index + count;
+      const isClone = i >= originalCards.length;
+      card.classList.toggle("is-visible", isVisible);
+      card.tabIndex = isVisible && !isClone ? 0 : -1;
     });
     if (!withTransition) {
       void track.offsetWidth;
@@ -172,6 +295,7 @@ function createProductCarousel(root) {
     if (originalCards.length <= cloneCount) {
       originalCards.forEach((card) => {
         card.classList.add("is-visible");
+        card.tabIndex = 0;
         track.appendChild(card);
       });
       cards = Array.from(track.querySelectorAll(".product-card"));
@@ -188,6 +312,7 @@ function createProductCarousel(root) {
     [...originalCards, ...append].forEach((card, i) => {
       const isClone = i >= originalCards.length;
       card.classList.remove("is-visible");
+      card.tabIndex = -1;
       if (isClone) card.setAttribute("aria-hidden", "true");
       track.appendChild(card);
     });
@@ -269,4 +394,5 @@ function createProductCarousel(root) {
 const hero = document.querySelector("[data-hero-carousel]");
 if (hero) createHeroCarousel(hero);
 
+createProductViewer();
 document.querySelectorAll("[data-product-carousel]").forEach(createProductCarousel);

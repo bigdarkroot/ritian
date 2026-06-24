@@ -31,6 +31,10 @@ body {
     linear-gradient(180deg, #fff4d7 0%, var(--cream) 24%, #fffaf0 100%);
 }
 
+body.viewer-open {
+  overflow: hidden;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -184,6 +188,7 @@ img {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 .hero-slide {
@@ -533,6 +538,7 @@ img {
   box-shadow: inset 0 0 0 1px rgba(143, 92, 23, .1);
   opacity: 1;
   transform: scale(1);
+  cursor: zoom-in;
   transition: transform .48s ease, box-shadow .28s ease;
 }
 
@@ -545,6 +551,11 @@ img {
 
 .product-card:hover img {
   transform: scale(1.04);
+}
+
+.product-card:focus-within {
+  outline: 3px solid rgba(216, 117, 29, .34);
+  outline-offset: 3px;
 }
 
 .product-grid-contain .product-card img {
@@ -560,6 +571,68 @@ img {
   background:
     linear-gradient(135deg, rgba(255, 250, 236, .92), rgba(255, 222, 156, .72)),
     linear-gradient(90deg, rgba(202, 105, 19, .08), transparent);
+}
+
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 4vw, 44px);
+  background: rgba(32, 20, 10, .82);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .22s ease, visibility .22s ease;
+}
+
+.image-viewer.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.image-viewer-image {
+  max-width: min(1120px, 92vw);
+  max-height: min(760px, 78vh);
+  border-radius: 18px;
+  background: #fffaf0;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .42);
+  object-fit: contain;
+}
+
+.image-viewer-caption {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(18px, 4vh, 36px);
+  margin: 0;
+  max-width: min(720px, calc(100vw - 36px));
+  transform: translateX(-50%);
+  color: #fff8e8;
+  font-weight: 800;
+  text-align: center;
+}
+
+.image-viewer-close {
+  position: fixed;
+  top: clamp(16px, 4vw, 34px);
+  right: clamp(16px, 4vw, 34px);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #5f3514;
+  background: #fff7e5;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, .28);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .contact-lead {
@@ -801,6 +874,16 @@ img {
   }
 
   .product-card {
+    border-radius: 14px;
+  }
+
+  .image-viewer {
+    padding: 14px;
+  }
+
+  .image-viewer-image {
+    max-width: calc(100vw - 28px);
+    max-height: 76vh;
     border-radius: 14px;
   }
 }
