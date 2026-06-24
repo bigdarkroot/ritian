@@ -107,8 +107,12 @@ function createSwipeNavigation(element, { onPrevious, onNext, onStart, onEnd }) 
     const isSwipe = Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25;
 
     if (isSwipe) {
+      element.dataset.swiped = "true";
       if (deltaX > 0) onPrevious();
       else onNext();
+      window.setTimeout(() => {
+        delete element.dataset.swiped;
+      }, 350);
     }
 
     isTracking = false;
@@ -214,6 +218,7 @@ function createProductViewer() {
   document.addEventListener("click", (event) => {
     const imageTarget = event.target.closest(".product-card img");
     if (!imageTarget) return;
+    if (imageTarget.closest("[data-swiped='true']")) return;
     open(imageTarget);
   });
   document.addEventListener("keydown", (event) => {
@@ -236,6 +241,7 @@ function createProductViewer() {
 
 function createProductCarousel(root) {
   const track = root.querySelector(".product-grid");
+  const windowEl = root.querySelector(".product-window");
   const prev = root.querySelector("[data-product-prev]");
   const next = root.querySelector("[data-product-next]");
   const originalCards = Array.from(root.querySelectorAll(".product-card"));
@@ -367,6 +373,12 @@ function createProductCarousel(root) {
   next.addEventListener("click", () => {
     move(1);
     start();
+  });
+  createSwipeNavigation(windowEl, {
+    onPrevious: () => move(-1),
+    onNext: () => move(1),
+    onStart: stop,
+    onEnd: start,
   });
   root.addEventListener("mouseenter", stop);
   root.addEventListener("mouseleave", start);

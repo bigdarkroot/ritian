@@ -509,6 +509,7 @@ img {
 
 .product-window {
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 .product-grid {
